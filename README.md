@@ -10,14 +10,14 @@
 
 ## O puzzle
 
-Makaro é um puzzle lógico jogado em uma grade dividida em **salas** (regiões).
+Makaro é um puzzle lógico jogado em uma grade dividida em **regiões**.
 
 **Regras:**
 
-- Cada sala de tamanho N contém os valores **1 até N exatamente uma vez**.
-- Células adjacentes ortogonalmente que pertencem a **salas diferentes** devem ter valores distintos.
-- Células **pretas com seta** apontam para o vizinho ortogonal com o **maior valor** entre todos os vizinhos de sala daquela célula preta — ou seja, o valor da célula destino é maior que o de todos os outros vizinhos que pertencem a alguma sala.
-- Células **pretas sem seta** não pertencem a nenhuma sala e não recebem valor.
+- Cada região de tamanho N contém os valores **1 até N exatamente uma vez**.
+- Células adjacentes ortogonalmente que pertencem a **regiões diferentes** devem ter valores distintos.
+- Células **pretas com seta** apontam para o vizinho ortogonal com o **maior valor** entre todos os vizinhos de região daquela célula preta — ou seja, o valor da célula destino é maior que o de todos os outros vizinhos que pertencem a alguma região.
+- Células **pretas sem seta** não pertencem a nenhuma região e não recebem valor.
 
 ---
 
@@ -26,19 +26,19 @@ Makaro é um puzzle lógico jogado em uma grade dividida em **salas** (regiões)
 ### Direto pelo terminal (recomendado)
 
 ```bash
-swipl -g "solucao(Tab), imprime_tabuleiro(Tab), halt" makaro.pl
+swipl -g "resolve, halt" makaro.pro
 ```
 
 ### Interativo
 
 ```bash
-swipl makaro.pl
+swipl makaro.pro
 ```
 
 No prompt `?-`:
 
 ```prolog
-?- solucao(Tab), imprime_tabuleiro(Tab).
+?- resolve.
 ```
 
 A saída usa `-` como separador entre células e `#` para células pretas:
@@ -54,7 +54,7 @@ A saída usa `-` como separador entre células e `#` para células pretas:
 
 ## Como configurar um puzzle
 
-Edite apenas o arquivo `puzzle_makaro.pl`, definindo três predicados:
+Edite apenas o arquivo `puzzle_makaro.pro`, definindo três predicados:
 
 ### `tabuleiro/1`
 
@@ -68,19 +68,19 @@ tabuleiro([
 ]).
 ```
 
-### `salas/1`
+### `regioes/1`
 
-Lista de salas no formato `sala(Posições, N)`, onde `N` é o tamanho da sala e `Posições` é a lista de células `pos(Linha, Coluna)` (1-indexado):
+Lista de regiões no formato `regiao(Posições, N)`, onde `N` é o tamanho da região e `Posições` é a lista de células `pos(Linha, Coluna)` (1-indexado):
 
 ```prolog
-salas([
-    sala([pos(1,1), pos(1,2)], 2),
-    sala([pos(1,4), pos(1,5), pos(2,4)], 3),
+regioes([
+    regiao([pos(1,1), pos(1,2)], 2),
+    regiao([pos(1,4), pos(1,5), pos(2,4)], 3),
     ...
 ]).
 ```
 
-> As costuras (restrições entre salas adjacentes) são **derivadas automaticamente** a partir das salas — não é necessário listá-las.
+> As bordas (restrições entre regiões adjacentes) são **derivadas automaticamente** a partir das regiões — não é necessário listá-las.
 
 ### `setas/1`
 
@@ -98,20 +98,20 @@ setas([
 
 ## Estrutura do código
 
-| Arquivo | O que faz |
-|---|---|
-| `makaro.pl` | Resolvedor genérico — restrições, solver, impressão |
-| `puzzle_makaro.pl` | Configuração do puzzle — grade, salas e setas |
+| Arquivo             | O que faz                                           |
+| ------------------- | --------------------------------------------------- |
+| `makaro.pro`        | Resolvedor genérico — restrições, solver, impressão |
+| `puzzle_makaro.pro` | Configuração do puzzle — grade, regiões e setas     |
 
-### `makaro.pl` — seções principais
+### `makaro.pro` — seções principais
 
-| Seção | O que faz |
-|---|---|
-| **Salas** | `completa_sala/2` — impõe `1..N` e `all_distinct` via CLP(FD) |
-| **Costuras** | `gera_costuras/2` — deriva automaticamente pares de células adjacentes de salas distintas; `aplica_costuras/2` — impõe `#\=` entre elas |
-| **Setas** | `aplica_uma_seta/4` — impõe `VDest #> VViz` para todos os vizinhos de sala da célula preta |
-| **Solver** | `solucao/1` — monta as restrições e chama `labeling([ff], Vars)` |
-| **Saída** | `imprime_tabuleiro/1` — imprime a grade com `-` e `#` para células pretas |
+| Seção      | O que faz                                                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Região** | `completa_regiao/2` — impõe `1..N` e `all_distinct` via CLP(FD)                                                                       |
+| **Bordas** | `gera_bordas/2` — deriva automaticamente pares de células adjacentes de regiões distintas; `aplica_bordas/2` — impõe `#\=` entre elas |
+| **Setas**  | `aplica_uma_seta/4` — impõe `VDest #> VViz` para todos os vizinhos de região da célula preta                                          |
+| **Solver** | `solucao/1` — monta as restrições e chama `labeling([ff], Vars)`                                                                      |
+| **Saída**  | `imprime_tabuleiro/1` — imprime a grade com `-` e `#` para células pretas                                                             |
 
 ### Algoritmo
 
@@ -119,9 +119,9 @@ O solver usa **programação por restrições** com CLP(FD):
 
 ```
 1. Criar variáveis para cada célula livre do tabuleiro.
-2. Aplicar restrições de sala: domínio 1..N + all_distinct.
-3. Derivar e aplicar costuras: células adjacentes de salas distintas ≠.
-4. Aplicar restrições de seta: valor destino > todos os outros vizinhos de sala.
+2. Aplicar restrições de região: domínio 1..N + all_distinct.
+3. Derivar e aplicar bordas: células adjacentes de regiões distintas ≠.
+4. Aplicar restrições de seta: valor destino > todos os outros vizinhos de região.
 5. labeling([ff], Vars): busca com heurística first-fail — tenta primeiro a
    variável com menor domínio restante, reduzindo o espaço de busca.
 ```
