@@ -77,13 +77,7 @@ seta_vizinho_menor(Tabuleiro, ValorDestino, PosVizinho) :-
     ValorDestino #> ValorVizinho.
 
 % Aplica a regra de seta para uma entrada da lista.
-% Caso 1: PosSeta é célula de região — comparação direta.
-% Caso 2: PosSeta é célula preta — PosDestino maior que todos os outros vizinhos de região.
-aplica_uma_seta(Tabuleiro, Regioes, PosSeta, PosDestino) :-
-    regiao_de(PosSeta, Regioes, _), !,
-    celula(Tabuleiro, PosSeta, ValorSeta),
-    celula(Tabuleiro, PosDestino, ValorDestino),
-    ValorSeta #> ValorDestino.
+% PosSeta é célula preta — PosDestino maior que todos os outros vizinhos de região.
 aplica_uma_seta(Tabuleiro, Regioes, PosSeta, PosDestino) :-
     celula(Tabuleiro, PosDestino, ValorDestino),
     findall(PosViz,
